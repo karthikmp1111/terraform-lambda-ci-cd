@@ -7,11 +7,11 @@ import urllib.parse
 from io import BytesIO
 
 # Initialize AWS clients
-# s3_client = boto3.client('s3')
-# secrets_client = boto3.client('secretsmanager')
-AWS_REGION = "us-west-1"
-s3_client = boto3.client('s3', region_name=AWS_REGION)
-secrets_client = boto3.client('secretsmanager', region_name=AWS_REGION)
+s3_client = boto3.client('s3')
+secrets_client = boto3.client('secretsmanager')
+# AWS_REGION = "us-west-1"
+# s3_client = boto3.client('s3', region_name=AWS_REGION)
+# secrets_client = boto3.client('secretsmanager', region_name=AWS_REGION)
 
 # Fetch credentials from AWS Secrets Manager
 def get_redshift_credentials():
