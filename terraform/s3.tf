@@ -1,6 +1,7 @@
 # Declare the S3 bucket for CloudTrail logs
 resource "aws_s3_bucket" "cloudtrail_logs" {
   bucket = "bg-cloudtrail-logs-bucket-2025"
+  force_destroy = true
 }
 
 # Declare the aws_caller_identity data source to get the account id
