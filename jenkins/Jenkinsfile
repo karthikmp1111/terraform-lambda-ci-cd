@@ -22,7 +22,8 @@ pipeline {
             }
             steps {
                 script {
-                    def hasChanged = sh(script: "cmp -s lambda/lambda_function.py lambda/.lambda_function_old.py || echo 'changed'", returnStdout: true).trim()
+                    // def hasChanged = sh(script: "cmp -s lambda/lambda_function.py lambda/.lambda_function_old.py || echo 'changed'", returnStdout: true).trim()
+                    def changes = sh(script: "cmp -s lambda/lambda_function.py lambda/.lambda_function_old.py || echo changed", returnStdout: true).trim()
                     if (hasChanged == 'changed') {
                         echo "🚀 Code changed, updating ZIP and deploying..."
                         sh 'cp lambda/lambda_function.py lambda/.lambda_function_old.py'
