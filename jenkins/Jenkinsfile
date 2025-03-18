@@ -122,7 +122,6 @@ pipeline {
 
     environment {
         AWS_REGION = 'us-west-1'
-        DEPLOY_LAMBDA = 'false' // Default to false
     }
 
     parameters {
@@ -142,28 +141,16 @@ pipeline {
             }
             steps {
                 script {
-                    def changes = sh(script: "cmp -s lambda/lambda_function.py lambda/.lambda_function_old.py || echo changed", returnStdout: true).trim()
-                    if (changes == 'changed') {
+                    def newHash = sh(script: "md5sum lambda/lambda_function.py | awk '{print \$1}'", returnStdout: true).trim()
+                    def oldHash = sh(script: "[ -f lambda/.last_deployed_hash ] && cat lambda/.last_deployed_hash || echo ''", returnStdout: true).trim()
+                    
+                    if (newHash != oldHash) {
                         echo "🚀 Code changed, updating ZIP and deploying..."
-                        sh 'cp lambda/lambda_function.py lambda/.lambda_function_old.py'
-                        sh 'echo DEPLOY_LAMBDA=true > env.properties' // Store in file
+                        sh "echo $newHash > lambda/.last_deployed_hash"
+                        env.DEPLOY_LAMBDA = 'true'
                     } else {
                         echo "✅ No changes detected, skipping Lambda deployment."
-                        sh 'echo DEPLOY_LAMBDA=false > env.properties' // Store in file
-                    }
-                }
-            }
-        }
-
-        stage('Load Environment Variables') {
-            steps {
-                script {
-                    if (fileExists("env.properties")) {
-                        def props = readProperties file: "env.properties"
-                        env.DEPLOY_LAMBDA = props['DEPLOY_LAMBDA']
-                        echo "Loaded DEPLOY_LAMBDA=${env.DEPLOY_LAMBDA}"
-                    } else {
-                        echo "⚠️ env.properties file not found! DEPLOY_LAMBDA will remain false."
+                        env.DEPLOY_LAMBDA = 'false'
                     }
                 }
             }
@@ -216,7 +203,10 @@ pipeline {
 
         stage('Terraform Apply') {
             when {
-                expression { params.APPLY_OR_DESTROY == 'apply' }
+                allOf {
+                    environment name: 'DEPLOY_LAMBDA', value: 'true'
+                    expression { params.APPLY_OR_DESTROY == 'apply' }
+                }
             }
             steps {
                 dir('terraform') {
