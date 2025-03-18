@@ -22,9 +22,8 @@ pipeline {
             }
             steps {
                 script {
-                    // def hasChanged = sh(script: "cmp -s lambda/lambda_function.py lambda/.lambda_function_old.py || echo 'changed'", returnStdout: true).trim()
                     def changes = sh(script: "cmp -s lambda/lambda_function.py lambda/.lambda_function_old.py || echo changed", returnStdout: true).trim()
-                    if (hasChanged == 'changed') {
+                    if (changes == 'changed') {
                         echo "🚀 Code changed, updating ZIP and deploying..."
                         sh 'cp lambda/lambda_function.py lambda/.lambda_function_old.py'
                         env.DEPLOY_LAMBDA = 'true'
@@ -84,7 +83,6 @@ pipeline {
         stage('Terraform Apply') {
             when {
                 allOf {
-                    environment name: 'DEPLOY_LAMBDA', value: 'true'
                     expression { params.APPLY_OR_DESTROY == 'apply' }
                 }
             }
