@@ -122,7 +122,7 @@ pipeline {
 
     environment {
         AWS_REGION = 'us-west-1'
-        DEPLOY_LAMBDA = 'false' // Default value
+        DEPLOY_LAMBDA = 'false' // Default to false
     }
 
     parameters {
@@ -146,10 +146,10 @@ pipeline {
                     if (changes == 'changed') {
                         echo "🚀 Code changed, updating ZIP and deploying..."
                         sh 'cp lambda/lambda_function.py lambda/.lambda_function_old.py'
-                        sh 'echo DEPLOY_LAMBDA=true >> $WORKSPACE/env.properties'
+                        sh 'echo DEPLOY_LAMBDA=true > env.properties' // Store in file
                     } else {
                         echo "✅ No changes detected, skipping Lambda deployment."
-                        sh 'echo DEPLOY_LAMBDA=false >> $WORKSPACE/env.properties'
+                        sh 'echo DEPLOY_LAMBDA=false > env.properties' // Store in file
                     }
                 }
             }
@@ -158,9 +158,12 @@ pipeline {
         stage('Load Environment Variables') {
             steps {
                 script {
-                    if (fileExists("$WORKSPACE/env.properties")) {
-                        def props = readProperties file: "$WORKSPACE/env.properties"
+                    if (fileExists("env.properties")) {
+                        def props = readProperties file: "env.properties"
                         env.DEPLOY_LAMBDA = props['DEPLOY_LAMBDA']
+                        echo "Loaded DEPLOY_LAMBDA=${env.DEPLOY_LAMBDA}"
+                    } else {
+                        echo "⚠️ env.properties file not found! DEPLOY_LAMBDA will remain false."
                     }
                 }
             }
