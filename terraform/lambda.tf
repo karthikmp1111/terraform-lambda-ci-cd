@@ -8,7 +8,7 @@
 # Define the Lambda function using the generated ZIP file
 resource "aws_lambda_function" "process_logs" {
   # filename         = data.archive_file.lambda_zip.output_path
-  filename         = "lambda_function.zip"
+  filename         = "../lambda/lambda_function.zip"
   function_name    = "ProcessSecurityLogs"
   role             = aws_iam_role.lambda_role.arn
   handler          = "lambda_function.lambda_handler"
@@ -18,7 +18,7 @@ resource "aws_lambda_function" "process_logs" {
   layers           = ["arn:aws:lambda:us-west-1:084375561488:layer:psycopg2-layer:1"]
 
   # source_code_hash = data.archive_file.lambda_zip.output_base64sha256
-  source_code_hash = filebase64sha256("lambda_function.zip")
+  source_code_hash = filebase64sha256("../lambda/lambda_function.zip")
 
   environment {
     variables = {

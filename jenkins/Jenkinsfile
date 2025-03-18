@@ -1,78 +1,3 @@
-// pipeline {
-//     agent any
-
-//     environment {
-//         AWS_REGION = 'us-west-1'
-//     }
-
-//     stages {
-//         stage('Checkout Code') {
-//             steps {
-//                 git branch: 'main', url: 'https://github.com/karthikmp1111/terraform-lambda-ci-cd.git'
-//             }
-//         }
-
-//         stage('Check for Lambda Code Changes') {
-//             steps {
-//                 script {
-//                     def hasChanged = sh(script: "cmp -s lambda/lambda_function.py lambda/.lambda_function_old.py || echo 'changed'", returnStdout: true).trim()
-//                     if (hasChanged == 'changed') {
-//                         echo "🚀 Code changed, updating ZIP and deploying..."
-//                         sh 'cp lambda/lambda_function.py lambda/.lambda_function_old.py'
-//                         env.DEPLOY_LAMBDA = 'true'
-//                     } else {
-//                         echo "✅ No changes detected, skipping Lambda deployment."
-//                         env.DEPLOY_LAMBDA = 'false'
-//                     }
-//                 }
-//             }
-//         }
-
-//         stage('Setup AWS Credentials') {
-//             steps {
-//                 withCredentials([
-//                     string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY'),
-//                     string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_KEY')
-//                 ]) {
-//                     sh '''
-//                     aws configure set aws_access_key_id $AWS_ACCESS_KEY
-//                     aws configure set aws_secret_access_key $AWS_SECRET_KEY
-//                     aws configure set region $AWS_REGION
-//                     '''
-//                 }
-//             }
-//         }
-
-//         stage('Terraform Init') {
-//             steps {
-//                 dir('terraform') {
-//                     sh 'terraform init'
-//                 }
-//             }
-//         }
-
-//         stage('Terraform Plan') {
-//             steps {
-//                 dir('terraform') {
-//                     sh 'terraform plan'
-//                 }
-//             }
-//         }
-
-//         stage('Terraform Apply') {
-//             when {
-//                 environment name: 'DEPLOY_LAMBDA', value: 'true'
-//             }
-//             steps {
-//                 dir('terraform') {
-//                     sh 'terraform apply -auto-approve'
-//                 }
-//             }
-//         }
-//     }
-// }
-
-
 pipeline {
     agent any
 
@@ -157,3 +82,90 @@ pipeline {
         }
     }
 }
+
+
+
+// pipeline {
+//     agent any
+
+//     environment {
+//         AWS_REGION = 'us-west-1'
+//     }
+
+//     stages {
+//         stage('Checkout Code') {
+//             steps {
+//                 git branch: 'main', url: 'https://github.com/karthikmp1111/terraform-lambda-ci-cd.git'
+//             }
+//         }
+
+//         stage('Check for Lambda Code Changes') {
+//             steps {
+//                 script {
+//                     def hasChanged = sh(script: "cmp -s lambda/lambda_function.py lambda/.lambda_function_old.py || echo 'changed'", returnStdout: true).trim()
+//                     if (hasChanged == 'changed') {
+//                         echo "🚀 Code changed, updating ZIP and deploying..."
+//                         sh 'cp lambda/lambda_function.py lambda/.lambda_function_old.py'
+//                         env.DEPLOY_LAMBDA = 'true'
+//                     } else {
+//                         echo "✅ No changes detected, skipping Lambda deployment."
+//                         env.DEPLOY_LAMBDA = 'false'
+//                     }
+//                 }
+//             }
+//         }
+
+//         stage('Create Lambda ZIP') {
+//             when {
+//                 environment name: 'DEPLOY_LAMBDA', value: 'true'
+//             }
+//             steps {
+//                 dir('lambda') {
+//                     sh 'zip -q lambda_function.zip lambda_function.py'
+//                 }
+//             }
+//         }
+
+//         stage('Setup AWS Credentials') {
+//             steps {
+//                 withCredentials([
+//                     string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY'),
+//                     string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_KEY')
+//                 ]) {
+//                     sh '''
+//                     aws configure set aws_access_key_id $AWS_ACCESS_KEY
+//                     aws configure set aws_secret_access_key $AWS_SECRET_KEY
+//                     aws configure set region $AWS_REGION
+//                     '''
+//                 }
+//             }
+//         }
+
+//         stage('Terraform Init') {
+//             steps {
+//                 dir('terraform') {
+//                     sh 'terraform init'
+//                 }
+//             }
+//         }
+
+//         stage('Terraform Plan') {
+//             steps {
+//                 dir('terraform') {
+//                     sh 'terraform plan'
+//                 }
+//             }
+//         }
+
+//         stage('Terraform Apply') {
+//             when {
+//                 environment name: 'DEPLOY_LAMBDA', value: 'true'
+//             }
+//             steps {
+//                 dir('terraform') {
+//                     sh 'terraform apply -auto-approve'
+//                 }
+//             }
+//         }
+//     }
+// }
