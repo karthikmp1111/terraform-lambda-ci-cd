@@ -1,6 +1,6 @@
 # Fetch the existing secret from Secrets Manager by name
 data "aws_secretsmanager_secret" "redshift_secret" {
-  name = "bg-redshift-credentials"  # The name of your existing secret
+  name = "bg-redshift-credentials"
 }
 
 # Fetch the current version of the secret (to retain other values)
