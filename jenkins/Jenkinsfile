@@ -1,8 +1,76 @@
+// pipeline {
+//     agent any
+
+//     environment {
+//         AWS_REGION = 'us-west-1'
+//     }
+
+//     stages {
+//         stage('Checkout Code') {
+//             steps {
+//                 git branch: 'main', url: 'https://github.com/karthikmp1111/terraform-lambda-ci-cd.git'
+//             }
+//         }
+
+//         stage('Debug Workspace') {
+//             steps {
+//                 script {
+//                     sh 'pwd'    // Check current working directory
+//                     sh 'ls -l'  // List files to verify lambda/ exists
+//                 }
+//             }
+//         }
+
+//         stage('Prepare Lambda ZIP') {
+//             steps {
+//                 dir('terraform') {  // Ensure we are inside terraform/
+//                     sh 'chmod +x prepare.sh'
+//                     sh './prepare.sh'
+//                 }
+//             }
+//         }
+
+//         stage('Setup AWS Credentials') {
+//             steps {
+//                 withCredentials([
+//                     string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY'),
+//                     string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_KEY')
+//                 ]) {
+//                     sh '''
+//                     export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY
+//                     export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
+//                     aws configure set aws_access_key_id $AWS_ACCESS_KEY
+//                     aws configure set aws_secret_access_key $AWS_SECRET_KEY
+//                     aws configure set region $AWS_REGION
+//                     '''
+//                 }
+//             }
+//         }
+
+//         stage('Terraform Init & Apply') {
+//             steps {
+//                 dir('terraform') { // Ensure we are inside terraform/
+//                     sh 'terraform init'
+//                     sh 'terraform destroy -auto-approve'
+//                 }
+//             }
+//         }
+//     }
+// }
+
+
+
+
+
 pipeline {
     agent any
 
     environment {
         AWS_REGION = 'us-west-1'
+    }
+
+    parameters {
+        choice(name: 'APPLY_OR_DESTROY', choices: ['apply', 'destroy'], description: 'Choose whether to apply or destroy Terraform resources')
     }
 
     stages {
@@ -47,11 +115,32 @@ pipeline {
             }
         }
 
-        stage('Terraform Init & Apply') {
+        stage('Terraform Init') {
             steps {
                 dir('terraform') { // Ensure we are inside terraform/
                     sh 'terraform init'
-                    sh 'terraform destroy -auto-approve'
+                }
+            }
+        }
+
+        stage('Terraform Plan') {
+            steps {
+                dir('terraform') {
+                    sh 'terraform plan'
+                }
+            }
+        }
+
+        stage('Terraform Apply or Destroy') {
+            steps {
+                dir('terraform') {
+                    script {
+                        if (params.APPLY_OR_DESTROY == 'apply') {
+                            sh 'terraform apply -auto-approve'
+                        } else {
+                            sh 'terraform destroy -auto-approve'
+                        }
+                    }
                 }
             }
         }

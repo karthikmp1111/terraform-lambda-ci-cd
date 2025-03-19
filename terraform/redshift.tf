@@ -6,4 +6,5 @@ resource "aws_redshift_cluster" "security_cluster" {
   node_type            = "dc2.large"
   cluster_type         = "single-node"
   skip_final_snapshot  = true
+  encrypted            = true
 }
