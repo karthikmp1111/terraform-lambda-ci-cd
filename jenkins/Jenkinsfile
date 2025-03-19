@@ -12,11 +12,20 @@ pipeline {
             }
         }
 
-        stage('Prepare Lambda ZIP') {
+        stage('Debug Workspace') {
             steps {
                 script {
-                    sh 'chmod +x terraform/prepare.sh'
-                    sh './terraform/prepare.sh'
+                    sh 'pwd'    // Check current working directory
+                    sh 'ls -l'  // List files to verify lambda/ exists
+                }
+            }
+        }
+
+        stage('Prepare Lambda ZIP') {
+            steps {
+                dir('terraform') {  // Ensure we are inside terraform/
+                    sh 'chmod +x prepare.sh'
+                    sh './prepare.sh'
                 }
             }
         }
@@ -28,6 +37,8 @@ pipeline {
                     string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_KEY')
                 ]) {
                     sh '''
+                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY
+                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_KEY
                     aws configure set aws_access_key_id $AWS_ACCESS_KEY
                     aws configure set aws_secret_access_key $AWS_SECRET_KEY
                     aws configure set region $AWS_REGION
@@ -38,7 +49,7 @@ pipeline {
 
         stage('Terraform Init & Apply') {
             steps {
-                dir('terraform') {
+                dir('terraform') { // Ensure we are inside terraform/
                     sh 'terraform init'
                     sh 'terraform apply -auto-approve'
                 }

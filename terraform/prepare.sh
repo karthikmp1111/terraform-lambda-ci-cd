@@ -1,12 +1,17 @@
 #!/bin/bash
 set -e  # Exit on error
 
-LAMBDA_DIR="../lambda"
+# Get the directory of this script (Terraform folder)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LAMBDA_DIR="$SCRIPT_DIR/../lambda"
 
+# Check if the Lambda directory exists
 if [ ! -d "$LAMBDA_DIR" ]; then
-    echo "❌ Lambda folder not found!"
+    echo "❌ Lambda folder not found in $LAMBDA_DIR!"
     exit 1  # Fail the build
 fi
+
+echo "✅ Lambda folder found. Preparing ZIP..."
 
 # Create ZIP only if lambda function exists
 if [ -f "$LAMBDA_DIR/lambda_function.py" ]; then
