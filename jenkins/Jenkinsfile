@@ -5,10 +5,6 @@ pipeline {
         AWS_REGION = 'us-west-1'
     }
 
-    parameters {
-        choice(name: 'APPLY_OR_DESTROY', choices: ['apply', 'destroy'], description: 'Choose whether to apply or destroy Terraform resources')
-    }
-
     stages {
         stage('Checkout Code') {
             steps {
@@ -16,37 +12,11 @@ pipeline {
             }
         }
 
-        stage('Check for Lambda Code Changes') {
-            when {
-                expression { params.APPLY_OR_DESTROY == 'apply' }
-            }
+        stage('Prepare Lambda ZIP') {
             steps {
                 script {
-                    def newHash = sh(script: "md5sum lambda/lambda_function.py | awk '{print \$1}'", returnStdout: true).trim()
-                    def oldHash = sh(script: "[ -f lambda/.last_deployed_hash ] && cat lambda/.last_deployed_hash || echo ''", returnStdout: true).trim()
-                    
-                    if (newHash != oldHash) {
-                        echo "🚀 Code changed, updating ZIP and deploying..."
-                        sh "echo $newHash > lambda/.last_deployed_hash"
-                        env.DEPLOY_LAMBDA = 'true'
-                    } else {
-                        echo "✅ No changes detected, skipping Lambda deployment."
-                        env.DEPLOY_LAMBDA = 'false'
-                    }
-                }
-            }
-        }
-
-        stage('Create Lambda ZIP') {
-            when {
-                allOf {
-                    environment name: 'DEPLOY_LAMBDA', value: 'true'
-                    expression { params.APPLY_OR_DESTROY == 'apply' }
-                }
-            }
-            steps {
-                dir('lambda') {
-                    sh 'zip -q lambda_function.zip lambda_function.py'
+                    sh 'chmod +x terraform/prepare.sh'
+                    sh './terraform/prepare.sh'
                 }
             }
         }
@@ -66,54 +36,11 @@ pipeline {
             }
         }
 
-        stage('Terraform Init') {
+        stage('Terraform Init & Apply') {
             steps {
                 dir('terraform') {
                     sh 'terraform init'
-                }
-            }
-        }
-
-        stage('Terraform Plan') {
-            steps {
-                dir('terraform') {
-                    sh 'terraform plan'
-                }
-            }
-        }
-
-        stage('Terraform Apply') {
-            when {
-                allOf {
-                    environment name: 'DEPLOY_LAMBDA', value: 'true'
-                    expression { params.APPLY_OR_DESTROY == 'apply' }
-                }
-            }
-            steps {
-                dir('terraform') {
                     sh 'terraform apply -auto-approve'
-                }
-            }
-        }
-
-        stage('Empty S3 Bucket Before Destroy') {
-            when {
-                expression { params.APPLY_OR_DESTROY == 'destroy' }
-            }
-            steps {
-                script {
-                    sh 'aws s3 rm s3://bg-cloudtrail-logs-bucket-2025 --recursive || true'
-                }
-            }
-        }
-
-        stage('Terraform Destroy') {
-            when {
-                expression { params.APPLY_OR_DESTROY == 'destroy' }
-            }
-            steps {
-                dir('terraform') {
-                    sh 'terraform destroy -auto-approve'
                 }
             }
         }
